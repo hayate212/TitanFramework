@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/hayate212/seviper"
 )
 
 type Worker struct {
-	Config WorkerConfig
+	Config       WorkerConfig
+	EventHandler WorkerEventHandler
 }
 
 type WorkerConfig struct {
@@ -18,6 +21,7 @@ type WorkerConfig struct {
 
 func NewWorker(args ...interface{}) *Worker {
 	var config WorkerConfig
+	var we *WorkerEventHandler
 	if args[0] != nil {
 		config = args[0].(WorkerConfig)
 	} else {
@@ -28,7 +32,12 @@ func NewWorker(args ...interface{}) *Worker {
 			MaxRequestSize: 255,
 		}
 	}
-	return &Worker{config}
+	if args[1] != nil {
+		we = args[1].(*WorkerEventHandler)
+	} else {
+		we = NewWorkerEventHandler()
+	}
+	return &Worker{config, *we}
 }
 
 func (w *Worker) Run() {
@@ -52,6 +61,11 @@ func (w *Worker) Run() {
 				}
 				buff := rawbuff[:n]
 				fmt.Printf("%v\nlength:%v\n", buff, n)
+				r := seviper.NewReader(buff)
+				key := r.ToString()
+				if e, ok := w.EventHandler[key]; ok {
+					e.Run(r.Backward())
+				}
 			}
 		}()
 	}

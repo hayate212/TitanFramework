@@ -13,11 +13,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	w := t.NewWorker(t.WorkerConfig{
-		Address:        config.Address,
-		Port:           config.Port,
-		MaxRequestSize: config.MaxRequestSize,
-	})
+	we := t.NewWorkerEventHandler()
+	w := t.NewWorker(
+		t.WorkerConfig{
+			Address:        config.Address,
+			Port:           config.Port,
+			MaxRequestSize: config.MaxRequestSize,
+		},
+		we,
+	)
 	app.Init(w)
 	w.Run()
 }
