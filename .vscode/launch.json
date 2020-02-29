@@ -12,6 +12,21 @@
       "program": "${workspaceFolder}\\titan.go",
       "env": {},
       "args": []
+    },
+    {
+      "name": "Launch TestClient",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}\\test\\client\\main.go",
+      "env": {},
+      "args": []
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Server/Client",
+      "configurations": ["Launch TitanServer", "Launch TestClient"],
     }
   ]
 }
