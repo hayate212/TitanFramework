@@ -7,8 +7,9 @@ import (
 )
 
 type TitanConfig struct {
-	Address string `json:"Address"`
-	Port    int    `json:"Port"`
+	Address        string `json:"Address"`
+	Port           int    `json:"Port"`
+	MaxRequestSize int    `json:"MaxRequestSize"`
 }
 
 func ConfigLoad(config *TitanConfig) error {

@@ -14,8 +14,9 @@ func main() {
 		log.Fatal(err)
 	}
 	w := t.NewWorker(t.WorkerConfig{
-		Address: config.Address,
-		Port:    config.Port,
+		Address:        config.Address,
+		Port:           config.Port,
+		MaxRequestSize: config.MaxRequestSize,
 	})
 	app.Init(w)
 	w.Run()

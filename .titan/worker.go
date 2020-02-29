@@ -11,8 +11,9 @@ type Worker struct {
 }
 
 type WorkerConfig struct {
-	Address string
-	Port    int
+	Address        string
+	Port           int
+	MaxRequestSize int
 }
 
 func NewWorker(args ...interface{}) *Worker {
@@ -20,9 +21,11 @@ func NewWorker(args ...interface{}) *Worker {
 	if args[0] != nil {
 		config = args[0].(WorkerConfig)
 	} else {
+		//default setting
 		config = WorkerConfig{
-			Address: "localhost",
-			Port:    9999,
+			Address:        "localhost",
+			Port:           9999,
+			MaxRequestSize: 255,
 		}
 	}
 	return &Worker{config}
@@ -39,6 +42,17 @@ func (w *Worker) Run() {
 			continue
 		}
 		defer conn.Close()
-		fmt.Println(conn.RemoteAddr())
+		go func() {
+			fmt.Println(conn.RemoteAddr())
+			for {
+				rawbuff := make([]byte, w.Config.MaxRequestSize)
+				n, err := conn.Read(rawbuff)
+				if err != nil {
+					continue
+				}
+				buff := rawbuff[:n]
+				fmt.Printf("%v\nlength:%v\n", buff, n)
+			}
+		}()
 	}
 }
