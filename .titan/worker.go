@@ -64,7 +64,9 @@ func (w *Worker) Run() {
 				r := seviper.NewReader(buff)
 				key := r.ToString()
 				if e, ok := w.EventHandler[key]; ok {
-					e.Run(r.Backward())
+					if result := e.Run(r.Backward()); result != nil {
+						conn.Write(result)
+					}
 				}
 			}
 		}()
