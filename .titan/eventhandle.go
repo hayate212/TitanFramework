@@ -1,80 +1,49 @@
 package titan
 
-import "github.com/hayate212/seviper"
+import (
+	"fmt"
+	"reflect"
 
-type EventHandle struct {
-	f    func(args ...interface{}) []byte
-	args []ArgType
-}
-
-type ArgType int
-
-const (
-	INT ArgType = iota
-	STRING
-	FLOAT
+	"github.com/hayate212/seviper"
 )
 
-type WorkerEventHandler map[string]EventHandle
-
-func NewWorkerEventHandler() *WorkerEventHandler {
-	return &WorkerEventHandler{}
+type EventHandle struct {
+	i interface{}
+	v reflect.Value
 }
 
-func (we *WorkerEventHandler) Set(key string, f func(args ...interface{}) []byte, args []ArgType) {
-	(*we)[key] = EventHandle{f: f, args: args}
+func NewEventHandle(i interface{}) *EventHandle {
+	return &EventHandle{i: i, v: reflect.ValueOf(i)}
 }
 
-func (e *EventHandle) Run(argsbuff []byte) []byte {
-	br := seviper.NewReader(argsbuff)
-	switch len(e.args) {
-	case 0:
-		return e.f()
-	case 1:
-		x := getArgs(br, e.args[0])
-		return e.f(x)
-	case 2:
-		x := getArgs(br, e.args[0])
-		y := getArgs(br, e.args[1])
-		return e.f(x, y)
-	case 3:
-		x := getArgs(br, e.args[0])
-		y := getArgs(br, e.args[1])
-		z := getArgs(br, e.args[2])
-		return e.f(x, y, z)
-	case 4:
-		x := getArgs(br, e.args[0])
-		y := getArgs(br, e.args[1])
-		z := getArgs(br, e.args[2])
-		a := getArgs(br, e.args[3])
-		return e.f(x, y, z, a)
-	case 5:
-		x := getArgs(br, e.args[0])
-		y := getArgs(br, e.args[1])
-		z := getArgs(br, e.args[2])
-		a := getArgs(br, e.args[3])
-		b := getArgs(br, e.args[4])
-		return e.f(x, y, z, a, b)
-	case 6:
-		x := getArgs(br, e.args[0])
-		y := getArgs(br, e.args[1])
-		z := getArgs(br, e.args[2])
-		a := getArgs(br, e.args[3])
-		b := getArgs(br, e.args[4])
-		c := getArgs(br, e.args[5])
-		return e.f(x, y, z, a, b, c)
+func (h *EventHandle) Proc(name string, args []reflect.Value) ([]reflect.Value, bool) {
+	m := h.v.MethodByName(name)
+	if m.Kind() != reflect.Func {
+		return nil, false
 	}
-	return nil
+	return m.Call(args), true
 }
 
-func getArgs(r *seviper.Reader, argtype ArgType) interface{} {
-	switch argtype {
-	case INT:
-		return r.ToInt()
-	case STRING:
-		return r.ToString()
-	case FLOAT:
-		return r.ToFloat32()
+func (h *EventHandle) BytesToArgs(name string, bytes []byte) ([]reflect.Value, bool) {
+	m := h.v.MethodByName(name)
+	if m.Kind() != reflect.Func {
+		return nil, false
 	}
-	return nil
+	r := seviper.NewReader(bytes)
+	t := m.Type()
+	args := make([]reflect.Value, t.NumIn())
+	for i := 0; i < len(args); i++ {
+		k := t.In(i).Kind()
+		switch fmt.Sprintf("%v", k) {
+		case "string":
+			args[i] = reflect.ValueOf(r.ToString())
+		case "int":
+			args[i] = reflect.ValueOf(r.ToInt())
+		case "float32":
+			args[i] = reflect.ValueOf(r.ToFloat32())
+		case "float64":
+			args[i] = reflect.ValueOf(r.ToFloat64())
+		}
+	}
+	return args, true
 }

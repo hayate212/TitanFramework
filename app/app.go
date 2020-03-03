@@ -3,19 +3,16 @@ package app
 import (
 	"fmt"
 
-	"github.com/hayate212/seviper"
-
 	t "github.com/hayate212/TitanFramework/.titan"
 )
 
+type Handle struct{}
+
 func Init(w *t.Worker) {
-	w.EventHandler.Set("test", TestFunc, []t.ArgType{t.INT, t.INT})
+	w.SetEventHandle(&Handle{})
 }
 
-func TestFunc(args ...interface{}) []byte {
-	fmt.Println(args[0].(int), args[1].(int))
-	w := seviper.NewWriter()
-	w.Write(args[0].(int))
-	w.Write(args[1].(int))
-	return w.Bytes
+func (h *Handle) TestFunc(x, y int) string {
+	fmt.Println(x, y)
+	return "success"
 }

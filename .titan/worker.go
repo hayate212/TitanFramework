@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"reflect"
 
 	"github.com/hayate212/seviper"
 )
 
 type Worker struct {
-	Config       WorkerConfig
-	EventHandler WorkerEventHandler
+	Config WorkerConfig
+	Handle *EventHandle
 }
 
 type WorkerConfig struct {
@@ -20,24 +21,22 @@ type WorkerConfig struct {
 }
 
 func NewWorker(args ...interface{}) *Worker {
-	var config WorkerConfig
-	var we *WorkerEventHandler
-	if args[0] != nil {
-		config = args[0].(WorkerConfig)
-	} else {
-		//default setting
-		config = WorkerConfig{
-			Address:        "localhost",
-			Port:           9999,
-			MaxRequestSize: 255,
+	if args[0] == nil {
+		return &Worker{
+			//default setting
+			Config: WorkerConfig{
+				Address:        "localhost",
+				Port:           9999,
+				MaxRequestSize: 255,
+			},
+			Handle: NewEventHandle(nil),
 		}
 	}
-	if args[1] != nil {
-		we = args[1].(*WorkerEventHandler)
-	} else {
-		we = NewWorkerEventHandler()
-	}
-	return &Worker{config, *we}
+	return &Worker{Config: args[0].(WorkerConfig), Handle: NewEventHandle(nil)}
+}
+
+func (w *Worker) SetEventHandle(i interface{}) {
+	w.Handle = NewEventHandle(i)
 }
 
 func (w *Worker) Run() {
@@ -62,13 +61,35 @@ func (w *Worker) Run() {
 				buff := rawbuff[:n]
 				fmt.Printf("%v\nlength:%v\n", buff, n)
 				r := seviper.NewReader(buff)
-				key := r.ToString()
-				if e, ok := w.EventHandler[key]; ok {
-					if result := e.Run(r.Backward()); result != nil {
-						conn.Write(result)
+				name := r.ToString()
+				if args, ok := w.Handle.BytesToArgs(name, r.Backward()); ok {
+					if result, ok := w.Handle.Proc(name, args); ok {
+						conn.Write(ToBytes(result))
 					}
 				}
 			}
 		}()
 	}
+}
+
+func ToBytes(r []reflect.Value) []byte {
+	w := seviper.NewWriter()
+	for _, v := range r {
+		//fmt.Println(v.Kind())
+		switch fmt.Sprintf("%v", v.Kind()) {
+		case "string":
+			w.Write(v.String())
+		case "int":
+			w.Write(v.Int())
+		case "float32":
+			w.Write(float32(v.Float()))
+		case "float64":
+			w.Write(v.Float())
+		case "slice":
+			if v.Type() == reflect.TypeOf([]byte{}) {
+				w.Bytes = append(w.Bytes, v.Bytes()...)
+			}
+		}
+	}
+	return w.Bytes
 }

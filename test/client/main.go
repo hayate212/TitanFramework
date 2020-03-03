@@ -15,7 +15,7 @@ func main() {
 	c := 0
 	for {
 		w := seviper.NewWriter()
-		w.Write("test")
+		w.Write("TestFunc")
 		w.Write(c)
 		w.Write(c * c)
 		_, err := conn.Write(w.Bytes)
