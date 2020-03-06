@@ -59,9 +59,9 @@ func (w *Worker) Run() {
 					continue
 				}
 				buff := rawbuff[:n]
-				fmt.Printf("%v\nlength:%v\n", buff, n)
 				r := seviper.NewReader(buff)
 				name := r.ToString()
+				fmt.Printf("raw: %v\nlength: %v\nname: %v\n", buff, n, name)
 				if args, ok := w.Handle.BytesToArgs(name, r.Backward()); ok {
 					if result, ok := w.Handle.Proc(name, args); ok {
 						conn.Write(ToBytes(result))
