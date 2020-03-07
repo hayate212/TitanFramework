@@ -56,7 +56,7 @@ func (w *Worker) Run() {
 				rawbuff := make([]byte, w.Config.MaxRequestSize)
 				n, err := conn.Read(rawbuff)
 				if err != nil {
-					continue
+					return
 				}
 				buff := rawbuff[:n]
 				r := seviper.NewReader(buff)
