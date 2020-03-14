@@ -8,14 +8,22 @@ func NewEventHandles() *EventHandles {
 	return &EventHandles{}
 }
 
-func (hs *EventHandles) AddHandle(i interface{}) bool {
-	t := reflect.TypeOf(i)
-	if t.Kind() != reflect.Ptr {
-		return false
+func (hs *EventHandles) AddHandle(i interface{}, opt ...string) bool {
+	name := ""
+	if len(opt) > 0 {
+		name = opt[0]
+	} else {
+		t := reflect.TypeOf(i)
+		if t.Kind() != reflect.Ptr {
+			return false
+		}
+		name = t.Elem().Name()
 	}
-	name := t.Elem().Name()
-	(*hs)[name] = NewEventHandle(i)
-	return true
+	if name != "" {
+		(*hs)[name] = NewEventHandle(i)
+		return true
+	}
+	return false
 }
 
 func (hs *EventHandles) Proc(name string, args []byte) ([]reflect.Value, bool) {
