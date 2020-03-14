@@ -18,7 +18,7 @@ func (hs *EventHandles) AddHandle(i interface{}) bool {
 	return true
 }
 
-func (hs *EventHandles) Proc(name string, args []reflect.Value) ([]reflect.Value, bool) {
+func (hs *EventHandles) Proc(name string, args []byte) ([]reflect.Value, bool) {
 	d := -1
 	for i, c := range name {
 		if c == 0x2e {
@@ -31,5 +31,9 @@ func (hs *EventHandles) Proc(name string, args []reflect.Value) ([]reflect.Value
 	}
 
 	class, method := name[0:d], name[d+1:]
-	return (*hs)[class].Proc(method, args)
+	h := (*hs)[class]
+	if args, ok := h.BytesToArgs(method, args); ok {
+		return h.Proc(method, args)
+	}
+	return nil, false
 }
