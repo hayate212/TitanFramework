@@ -10,8 +10,8 @@ import (
 )
 
 type Worker struct {
-	Config WorkerConfig
-	Handle *EventHandle
+	Config  WorkerConfig
+	Handles *EventHandles
 }
 
 type WorkerConfig struct {
@@ -29,14 +29,14 @@ func NewWorker(args ...interface{}) *Worker {
 				Port:           9999,
 				MaxRequestSize: 255,
 			},
-			Handle: NewEventHandle(nil),
+			Handles: NewEventHandles(),
 		}
 	}
-	return &Worker{Config: args[0].(WorkerConfig), Handle: NewEventHandle(nil)}
+	return &Worker{Config: args[0].(WorkerConfig), Handles: NewEventHandles()}
 }
 
-func (w *Worker) SetEventHandle(i interface{}) {
-	w.Handle = NewEventHandle(i)
+func (w *Worker) AddEventHandle(i interface{}) bool {
+	return w.Handles.AddHandle(i)
 }
 
 func (w *Worker) Run() {
@@ -62,10 +62,8 @@ func (w *Worker) Run() {
 				r := seviper.NewReader(buff)
 				name := r.ToString()
 				fmt.Printf("raw: %v\nlength: %v\nname: %v\n", buff, n, name)
-				if args, ok := w.Handle.BytesToArgs(name, r.Backward()); ok {
-					if result, ok := w.Handle.Proc(name, args); ok {
-						conn.Write(ToBytes(result))
-					}
+				if result, ok := w.Handles.Proc(name, r.Backward()); ok {
+					conn.Write(ToBytes(result))
 				}
 			}
 		}()
